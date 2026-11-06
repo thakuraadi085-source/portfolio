@@ -1,0 +1,674 @@
+<!doctype html><html><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Agent build preview</title><style>:root {
+  --bg: #050505; --bg2: #0b0b10; --panel: rgba(255,255,255,.035); --line: rgba(255,255,255,.1);
+  --red: #ff2a2a; --red-d: #8c0f12; --blue: #3aa0ff; --text: #f2f2f2; --muted: #9a9aa6;
+  --f-display: 'Anton', Impact, sans-serif; --f-head: 'Space Grotesk', system-ui, sans-serif;
+  --f-body: 'Inter', system-ui, sans-serif; --f-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+body { background: var(--bg); color: var(--text); font-family: var(--f-body); line-height: 1.65; overflow-x: hidden; -webkit-font-smoothing: antialiased;
+  background-image: radial-gradient(1200px 600px at 85% -10%, rgba(255,42,42,.14), transparent 60%), radial-gradient(900px 600px at -10% 40%, rgba(40,30,140,.18), transparent 60%); background-attachment: fixed; }
+a { color: inherit; text-decoration: none; }
+button, input, select, textarea { font: inherit; color: inherit; }
+ul, ol { list-style: none; }
+::selection { background: var(--red); color: #fff; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.skip { position: fixed; left: 12px; top: -60px; background: var(--red); padding: 8px 14px; z-index: 200; font-weight: 600; }
+.skip:focus { top: 12px; }
+.mono { font-family: var(--f-mono); font-size: .72rem; letter-spacing: .12em; }
+.red { color: var(--red); } .muted { color: var(--muted); } .small { font-size: .88rem; }
+.backdrop, .trail { position: fixed; inset: 0; pointer-events: none; }
+.backdrop { z-index: 0; opacity: .8; } .trail { z-index: 150; }
+main, .footer { position: relative; z-index: 1; }
+
+/* NAV */
+.nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 14px clamp(16px, 4vw, 48px); background: linear-gradient(#050505ee, #05050500); backdrop-filter: blur(6px); }
+.brand { font-family: var(--f-display); letter-spacing: .08em; font-size: 1.25rem; display: flex; align-items: center; gap: 8px; }
+.brand-dot { width: 10px; height: 10px; background: var(--red); display: inline-block; }
+.menu { display: flex; gap: 4px; font-family: var(--f-mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; }
+.menu a { padding: 8px 12px; color: var(--muted); border-bottom: 2px solid transparent; transition: color .2s, border-color .2s; }
+.menu a:hover { color: var(--text); } .menu a.active { color: #fff; border-color: var(--red); }
+.burger { display: none; background: none; border: 1px solid var(--line); padding: 8px; cursor: pointer; }
+
+/* HERO */
+.hero { position: relative; min-height: 100svh; padding: 110px clamp(16px, 5vw, 72px) 90px; display: flex; flex-direction: column; justify-content: center; overflow: hidden; z-index: 1; }
+.hero-word { font-family: var(--f-display); font-size: clamp(4rem, 17.5vw, 17rem); line-height: .9; letter-spacing: .01em; color: transparent; -webkit-text-stroke: 2px var(--red); text-align: center; white-space: nowrap; opacity: .9; user-select: none; margin-bottom: -.12em; }
+.hero-grid { display: grid; grid-template-columns: 1.3fr .8fr; gap: clamp(24px, 5vw, 80px); align-items: end; position: relative; }
+.hello { font-family: var(--f-head); font-style: italic; font-size: clamp(1.3rem, 2.6vw, 2rem); }
+.name-block { display: inline-block; background: var(--red); font-family: var(--f-display); font-weight: 400; font-size: clamp(2.8rem, 8vw, 6.4rem); line-height: 1; padding: 0 .18em; letter-spacing: .02em; margin: 6px 0 14px; }
+.role { margin-bottom: 14px; }
+.lead { font-size: clamp(1rem, 1.4vw, 1.15rem); color: #d4d4dc; max-width: 62ch; }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; margin: 26px 0; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 13px 20px; background: var(--red); color: #fff; border: 1px solid var(--red); font-family: var(--f-mono); font-size: .75rem; letter-spacing: .12em; cursor: pointer; transition: transform .2s, background .2s, box-shadow .2s; }
+.btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px -10px var(--red); }
+.btn.ghost { background: transparent; border-color: var(--line); color: var(--text); } .btn.ghost:hover { border-color: var(--red); box-shadow: none; }
+.btn:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+.stats { display: flex; gap: clamp(20px, 4vw, 52px); }
+.stats dt { font-family: var(--f-head); font-weight: 700; font-size: 1.9rem; line-height: 1.1; }
+.stats dd { font-family: var(--f-mono); font-size: .66rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.hero-side { display: flex; gap: 20px; align-items: flex-end; justify-content: flex-end; }
+.role-list { font-family: var(--f-mono); font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: grid; gap: 8px; padding-bottom: 36px; }
+.role-list li::before { content: '▸ '; color: var(--red); }
+.photo { width: clamp(170px, 20vw, 270px); flex: none; }
+.photo-frame { position: relative; aspect-ratio: 5/6; background: #111; overflow: hidden; border: 1px solid var(--line); }
+.photo-frame img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.2); mix-blend-mode: luminosity; }
+.photo-frame::after { content: ''; position: absolute; inset: 0; background: linear-gradient(160deg, rgba(255,42,42,.85), rgba(80,5,10,.9)); mix-blend-mode: multiply; pointer-events: none; }
+.photo-fallback { width: 100%; height: 100%; display: block; }
+.corner { position: absolute; width: 14px; height: 14px; border: 2px solid var(--blue); z-index: 2; }
+.tl { top: 6px; left: 6px; border-right: 0; border-bottom: 0; } .tr { top: 6px; right: 6px; border-left: 0; border-bottom: 0; }
+.bl { bottom: 6px; left: 6px; border-right: 0; border-top: 0; } .br { bottom: 6px; right: 6px; border-left: 0; border-top: 0; }
+.photo-cap { margin-top: 10px; font-family: var(--f-mono); font-size: .64rem; letter-spacing: .14em; color: var(--muted); }
+.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--red); margin-right: 6px; }
+.scroll-hint { position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); color: var(--muted); animation: bob 2.4s ease-in-out infinite; }
+@keyframes bob { 50% { transform: translate(-50%, 6px); } }
+
+/* SECTIONS */
+.section { padding: clamp(70px, 10vw, 130px) clamp(16px, 5vw, 72px); max-width: 1320px; margin: 0 auto; position: relative; }
+.head { margin-bottom: 44px; } .head .sec { color: var(--blue); margin-bottom: 26px; }
+.eyebrow { margin-bottom: 8px; }
+h2 { font-family: var(--f-head); font-weight: 700; font-size: clamp(1.9rem, 4.4vw, 3.4rem); line-height: 1.1; letter-spacing: -.02em; max-width: 24ch; }
+h3 { font-family: var(--f-head); font-weight: 600; letter-spacing: -.01em; }
+.sub { margin-top: 14px; max-width: 64ch; }
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }
+.reveal.in { opacity: 1; transform: none; }
+
+.about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(24px, 5vw, 72px); }
+.col p { margin-bottom: 18px; } .col:first-child p:first-child { font-size: 1.2rem; color: #fff; }
+.quote-col { border-left: 2px solid var(--red); padding-left: clamp(16px, 3vw, 36px); }
+blockquote { font-family: var(--f-head); font-weight: 700; font-size: clamp(1.3rem, 2.4vw, 1.9rem); line-height: 1.25; margin-top: 24px; }
+
+.timeline { border-left: 1px solid var(--line); margin-left: 6px; display: grid; gap: 34px; }
+.timeline li { position: relative; padding-left: 28px; }
+.timeline li::before { content: ''; position: absolute; left: -6px; top: 6px; width: 11px; height: 11px; background: var(--red); }
+.timeline h3 { font-size: 1.5rem; margin: 4px 0; }
+
+.skills { display: grid; grid-template-columns: 280px 1fr; gap: 24px; align-items: start; }
+.tabs { display: grid; gap: 4px; position: sticky; top: 90px; }
+.tab { background: transparent; border: 1px solid transparent; text-align: left; padding: 11px 14px; cursor: pointer; color: var(--muted); transition: all .2s; }
+.tab .mono { color: var(--red); margin-right: 6px; }
+.tab:hover { color: var(--text); background: var(--panel); } .tab.on { color: #fff; background: var(--panel); border-color: var(--line); border-left: 2px solid var(--red); }
+.panel { background: var(--panel); border: 1px solid var(--line); padding: clamp(18px, 3vw, 36px); animation: fade .4s ease; backdrop-filter: blur(8px); }
+@keyframes fade { from { opacity: 0; transform: translateY(8px); } }
+.panel-head { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 22px; } .panel-head h3 { font-size: 1.6rem; }
+.badge { display: inline-block; align-self: flex-start; font-family: var(--f-mono); font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; padding: 5px 10px; border: 1px solid var(--red); color: var(--red); white-space: nowrap; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+.chip { font-size: .8rem; padding: 5px 11px; border: 1px solid var(--line); background: rgba(255,255,255,.03); color: #d6d6de; }
+.chips.big .chip { font-size: .9rem; padding: 7px 13px; transition: border-color .2s, transform .2s; } .chips.big .chip:hover { border-color: var(--red); transform: translateY(-2px); }
+.note { margin-top: 20px; padding: 12px 14px; border: 1px dashed var(--line); color: var(--muted); line-height: 1.7; }
+
+.stack-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+.stack-card { background: var(--panel); border: 1px solid var(--line); padding: 20px; }
+.stack-card h3 { margin-bottom: 14px; }
+.stack-card li { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); font-size: .95rem; }
+.st { font-style: normal; font-family: var(--f-mono); font-size: .6rem; letter-spacing: .1em; text-transform: uppercase; padding: 2px 7px; border: 1px solid var(--line); color: var(--muted); }
+.st-used { color: #38e8a8; border-color: #38e8a855; } .st-learning { color: #ffd23a; border-color: #ffd23a55; } .st-exploring { color: var(--blue); border-color: #3aa0ff55; }
+
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+.filters .tab { border-color: var(--line); font-family: var(--f-mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+.card { background: var(--panel); border: 1px solid var(--line); transition: transform .3s, border-color .3s; }
+.card:hover { transform: translateY(-6px); border-color: var(--red); }
+.card-btn { display: block; width: 100%; text-align: left; background: none; border: 0; cursor: pointer; }
+.card-body { padding: 18px 18px 20px; } .card-body h3 { font-size: 1.3rem; margin: 4px 0 2px; }
+.card-sum { margin: 10px 0; font-size: .92rem; color: #c9c9d2; }
+.more { display: inline-flex; gap: 4px; align-items: center; margin-top: 8px; color: var(--red); }
+.pv { position: relative; overflow: hidden; aspect-ratio: 400/220; } .pv svg { width: 100%; height: 100%; display: block; }
+.pv-tag { position: absolute; right: 8px; bottom: 8px; font-family: var(--f-mono); font-size: .56rem; letter-spacing: .1em; text-transform: uppercase; background: #000a; padding: 3px 7px; color: #ccc; }
+
+.modal-back { position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,.8); backdrop-filter: blur(6px); display: grid; place-items: center; padding: 16px; animation: fade .25s; }
+.modal { position: relative; width: min(760px, 100%); max-height: 92vh; overflow: auto; background: #0b0b0f; border: 1px solid var(--line); }
+.modal-x { position: absolute; right: 10px; top: 10px; z-index: 2; background: #000b; border: 1px solid var(--line); padding: 7px; cursor: pointer; display: grid; }
+.modal-body { padding: clamp(18px, 3vw, 34px); } .modal-body h3 { font-size: 2rem; margin: 6px 12px 10px 0; display: inline-block; }
+.modal-body h4 { margin: 24px 0 8px; color: var(--muted); }
+.ticks li { padding: 5px 0 5px 20px; position: relative; } .ticks li::before { content: ''; position: absolute; left: 0; top: 14px; width: 8px; height: 2px; background: var(--red); }
+.modal-links { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; align-items: center; }
+
+.lab { display: grid; grid-template-columns: 340px 1fr; gap: 20px; }
+.lab-item { width: 100%; text-align: left; background: transparent; border: 1px solid var(--line); border-bottom: 0; padding: 13px 16px; cursor: pointer; color: var(--muted); transition: all .2s; }
+.lab-list li:last-child .lab-item { border-bottom: 1px solid var(--line); }
+.lab-item .mono { color: var(--red); margin-right: 8px; } .lab-item:hover { color: var(--text); } .lab-item.on { color: #fff; background: var(--panel); border-left: 2px solid var(--red); }
+.lab-view { position: relative; background: var(--panel); border: 1px solid var(--line); padding: clamp(20px, 3vw, 40px); overflow: hidden; animation: fade .4s; min-height: 300px; display: flex; flex-direction: column; gap: 14px; justify-content: center; }
+.lab-view h3 { font-size: clamp(1.5rem, 3vw, 2.3rem); }
+.scan { position: absolute; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--red), transparent); top: 0; animation: scan 4s linear infinite; opacity: .6; }
+@keyframes scan { to { top: 100%; } }
+
+.build-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+.build-grid li { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); transition: background .25s; } .build-grid li:hover { background: var(--panel); }
+.build-grid .reveal { padding: 24px 20px; display: flex; flex-direction: column; gap: 8px; } .build-grid strong { font-family: var(--f-head); font-size: 1.1rem; font-weight: 600; }
+.learn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.learn { border-left: 2px solid var(--red); padding: 8px 0 8px 18px; } .learn h3 { margin-bottom: 4px; }
+
+.contact { text-align: left; }
+.contact-grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: clamp(24px, 5vw, 72px); }
+.contact-info ul { margin-top: 22px; display: grid; gap: 14px; } .contact-info li a, .contact-info li span { display: flex; gap: 10px; align-items: center; }
+.contact-info a:hover { color: var(--red); } .na { color: var(--muted); }
+.form { display: grid; gap: 14px; } .form label { display: grid; gap: 6px; font-family: var(--f-mono); font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.form input, .form select, .form textarea { background: var(--panel); border: 1px solid var(--line); padding: 12px 14px; font-family: var(--f-body); font-size: 1rem; text-transform: none; letter-spacing: 0; color: var(--text); border-radius: 0; }
+.form select option { background: #0b0b0f; } .form input:focus, .form select:focus, .form textarea:focus { border-color: var(--red); outline: none; }
+.form .btn { justify-self: start; } .ok { color: #38e8a8; }
+
+.footer { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; padding: 40px clamp(16px, 5vw, 72px) 110px; border-top: 1px solid var(--line); }
+.socials { display: flex; gap: 14px; } .socials a, .socials span { padding: 9px; border: 1px solid var(--line); display: grid; color: var(--muted); } .socials a:hover { color: #fff; border-color: var(--red); } .socials span { opacity: .5; }
+
+.status { position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 90; display: flex; align-items: center; gap: 16px; padding: 9px 16px; background: rgba(10,10,14,.82); border: 1px solid var(--line); backdrop-filter: blur(10px); font-family: var(--f-mono); font-size: .64rem; letter-spacing: .12em; border-radius: 999px; white-space: nowrap; }
+.live { display: flex; align-items: center; gap: 6px; color: #38e8a8; } .live i { width: 7px; height: 7px; border-radius: 50%; background: #38e8a8; animation: pulse 2s infinite; }
+@keyframes pulse { 50% { opacity: .3; } }
+.bar { width: 90px; height: 3px; background: var(--line); display: block; } .bar b { display: block; height: 100%; background: var(--red); }
+.totop { position: fixed; right: 18px; bottom: 18px; z-index: 95; background: var(--red); padding: 11px; display: grid; opacity: 0; pointer-events: none; transform: translateY(10px); transition: all .3s; }
+.totop.show { opacity: 1; pointer-events: auto; transform: none; }
+
+@media (max-width: 980px) {
+  .hero-grid, .about-grid, .contact-grid, .lab, .skills { grid-template-columns: 1fr; }
+  .hero-side { justify-content: flex-start; } .tabs { position: static; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+}
+@media (max-width: 860px) {
+  .burger { display: block; }
+  .menu { position: fixed; inset: 58px 0 auto 0; background: #07070bf5; flex-direction: column; padding: 12px 16px 20px; border-bottom: 1px solid var(--line); transform: translateY(-130%); transition: transform .3s; }
+  .menu.open { transform: none; } .menu a { padding: 14px 6px; border-bottom: 1px solid var(--line); }
+}
+@media (max-width: 560px) {
+  .hero-word { -webkit-text-stroke-width: 1.2px; } .stats { flex-wrap: wrap; } .hide-sm { display: none; } .bar { width: 50px; }
+  .totop { bottom: 64px; } .hero-side { flex-direction: column; align-items: flex-start; } .role-list { padding-bottom: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .reveal { opacity: 1; transform: none; }
+}
+
+/* ── Reference-recording parity: pill nav, preloader, ghost cursors, selection box, hero card ── */
+.nav { left: 50%; right: auto; top: 14px; transform: translateX(-50%); width: max-content; max-width: calc(100vw - 24px); gap: 16px; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line); background: rgba(8,8,10,.72); backdrop-filter: blur(12px); }
+.brand-dot { width: 22px; height: 22px; border-radius: 5px; }
+.avail { display: inline-flex; align-items: center; gap: 6px; font: 500 .66rem var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.avail i { width: 6px; height: 6px; border-radius: 50%; background: #38e8a8; box-shadow: 0 0 8px #38e8a8; }
+.dispatch { font: 700 .7rem var(--f-mono); letter-spacing: .1em; color: var(--blue); text-decoration: underline; text-underline-offset: 4px; white-space: nowrap; }
+@media (max-width: 900px) { .avail { display: none; } }
+.pre { position: fixed; inset: 0; z-index: 500; background: #050505; display: grid; place-items: center; transition: opacity .6s ease; }
+.pre.out { opacity: 0; pointer-events: none; }
+.pre-tile { width: 54px; height: 54px; display: grid; place-items: center; border-radius: 12px; background: rgba(255,255,255,.08); border: 1px solid var(--line); font: 700 1rem var(--f-mono); color: #aaa; }
+.pre-c { position: absolute; left: 50%; top: 50%; width: 0; height: 0; animation: swirl 2s cubic-bezier(.6,0,.3,1) var(--d) both; }
+.pre-c svg { position: absolute; left: 0; top: 0; }
+@keyframes swirl { 0% { transform: rotate(var(--a)) translateX(150px) rotate(0); opacity: 0; } 15% { opacity: 1; } 100% { transform: rotate(calc(var(--a) + 540deg)) translateX(10px); opacity: .9; } }
+.ghosts { position: fixed; inset: 0; z-index: 140; pointer-events: none; overflow: hidden; }
+.gcur { position: absolute; left: 0; top: 0; animation: roam linear infinite; }
+.gcur span { position: absolute; left: 14px; top: 14px; padding: 1px 7px; border-radius: 4px; background: var(--c); color: #000; font: 700 .62rem var(--f-mono); white-space: nowrap; }
+@keyframes roam { 0%,100% { transform: translate(8vw,24vh); } 22% { transform: translate(72vw,18vh); } 46% { transform: translate(52vw,66vh); } 72% { transform: translate(86vw,74vh); } }
+.selbox { position: fixed; left: 0; top: 0; z-index: 145; pointer-events: none; opacity: 0; border: 1px solid var(--blue); transition: opacity .15s, transform .12s, width .12s, height .12s; }
+.selbox i { position: absolute; width: 7px; height: 7px; background: #fff; border: 1px solid var(--blue); }
+.selbox i:nth-child(1) { left: -4px; top: -4px; } .selbox i:nth-child(2) { right: -4px; top: -4px; }
+.selbox i:nth-child(3) { left: -4px; bottom: -4px; } .selbox i:nth-child(4) { right: -4px; bottom: -4px; }
+.selbox::after { content: attr(data-size); position: absolute; left: 50%; top: calc(100% + 8px); transform: translateX(-50%); padding: 1px 7px; border-radius: 3px; background: var(--blue); color: #001; font: 700 .62rem var(--f-mono); white-space: nowrap; }
+.hero-card { align-self: flex-end; width: min(300px, 100%); padding: 16px 18px; border: 1px solid var(--blue); background: rgba(8,10,18,.7); animation: hcIn .5s ease both; }
+.hero-card h4 { font: 600 1rem var(--f-head); margin: 6px 0 4px; } .hero-card p { color: var(--muted); font-size: .85rem; line-height: 1.5; margin-bottom: 10px; }
+.hc-n { color: var(--blue); } .hc-n em { font-style: normal; color: var(--muted); }
+@keyframes hcIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.photo-cap { border: 1px solid var(--red); color: var(--red); background: rgba(255,42,42,.06); }
+.contact .head { text-align: center; } .contact-grid { grid-template-columns: 1fr; max-width: 720px; margin: 0 auto; text-align: center; }
+.contact-info ul { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 16px; }
+.contact-info li > a, .contact-info li > span { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 6px; font-size: .85rem; }
+.form { text-align: left; }
+@media (prefers-reduced-motion: reduce) { .ghosts, .pre { display: none; } }
+
+/* ── Multi-agent build from zero ── */
+.ab-pre { opacity: 0 !important; transform: none !important; transition: none !important; pointer-events: none; }
+.ab-write { opacity: 1 !important; transform: none !important; filter: grayscale(1) brightness(.85); transition: none !important; }
+.ab-color { opacity: 1 !important; transform: none !important; filter: none; transition: filter .9s ease !important; }
+.ab-caret { position: absolute; left: 0; top: 0; width: 2px; animation: abc .7s steps(2) infinite; }
+@keyframes abc { 50% { opacity: 0; } }
+.ab-box.sel { background: transparent; }
+.ab-box.placed i { display: none; } .ab-box.placed em { display: none; }
+.ab-layer { position: fixed; inset: 0; z-index: 600; pointer-events: none; overflow: hidden; transition: opacity .6s; }
+.ab-layer.out { opacity: 0 !important; }
+.ab-agent { position: absolute; left: 0; top: 0; z-index: 2; transition: transform 420ms cubic-bezier(.5,0,.2,1); will-change: transform; filter: drop-shadow(0 2px 6px rgba(0,0,0,.55)); }
+.ab-agent svg { display: block; margin: -2px 0 0 -2px; }
+.ab-box { position: absolute; left: 0; top: 0; opacity: 0; border: 1px solid #3aa0ff; background: rgba(150,160,178,.2); will-change: transform, width, height; transition: opacity .25s, background .3s; }
+.ab-box.on { opacity: 1; } .ab-box.solid { background: transparent; } .ab-box.out { opacity: 0; }
+.ab-box i { position: absolute; width: 7px; height: 7px; background: #fff; border: 1px solid #3aa0ff; }
+.ab-box i:nth-child(1) { left: -4px; top: -4px; } .ab-box i:nth-child(2) { right: -4px; top: -4px; }
+.ab-box i:nth-child(3) { left: -4px; bottom: -4px; } .ab-box i:nth-child(4) { right: -4px; bottom: -4px; }
+.ab-box u { position: absolute; left: -1px; bottom: calc(100% + 4px); text-decoration: none; padding: 1px 6px; border-radius: 3px; background: #3aa0ff; color: #001; font: 700 .56rem var(--f-mono, monospace); letter-spacing: .04em; white-space: nowrap; }
+.ab-box em { position: absolute; left: 50%; top: calc(100% + 7px); transform: translateX(-50%); padding: 1px 6px; border-radius: 3px; background: #3aa0ff; color: #001; font: 700 .58rem var(--f-mono, monospace); font-style: normal; white-space: nowrap; }
+.ab-dock { position: fixed; left: 50%; bottom: 50px; z-index: 610; transform: translate(-50%, 16px); opacity: 0; max-width: calc(100vw - 20px); display: flex; align-items: center; gap: 12px; padding: 7px 8px 7px 14px; border: 1px solid var(--line, #333); border-radius: 999px; background: rgba(8,8,12,.88); backdrop-filter: blur(10px); font: 600 .64rem var(--f-mono, monospace); letter-spacing: .06em; text-transform: uppercase; color: #cfd2da; white-space: nowrap; transition: opacity .4s, transform .4s, border-color .3s; }
+.ab-dock.on { opacity: 1; transform: translate(-50%, 0); }
+.ab-dock .dots { display: inline-flex; gap: 3px; } .ab-dock .dots i { width: 7px; height: 7px; border-radius: 2px; }
+.ab-dock .bar { width: 74px; height: 3px; border-radius: 2px; background: rgba(255,255,255,.12); overflow: hidden; } .ab-dock .bar u { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #3aa0ff, #38e8a8); transition: width .3s; }
+.ab-dock .stat { color: #3aa0ff; min-width: 9ch; } .ab-dock.ok .stat { color: #38e8a8; } .ab-dock.ok { border-color: rgba(56,232,168,.5); }
+.ab-dock .rep { font: inherit; letter-spacing: inherit; text-transform: inherit; padding: 5px 12px; border-radius: 999px; border: 0; background: #3aa0ff; color: #001; cursor: pointer; pointer-events: auto; }
+.ab-dock .rep:disabled { background: rgba(255,255,255,.12); color: #777; cursor: default; }
+.ab-dock .rep:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+@media (max-width: 640px) { .ab-dock .dots, .ab-dock .bar { display: none; } .ab-dock { gap: 8px; font-size: .58rem; } }
+@media (prefers-reduced-motion: reduce) { .ab-layer, .ab-dock { display: none; } }
+.ab-box em:empty { display: none; }
+</style></head><body><main><section id="home" class="hero"><div class="hero-grid"><div class="hero-copy"><h1 class="hero-word">PORTFOLIO</h1><p class="lead">Hello, I'm Aditya. Architecting autonomous AI systems from first principles.</p><a class="btn" href="#">Explore architecture</a></div><div class="hero-side"><div class="hero-card"><h4>Autonomous Core</h4><p>Multi-agent orchestration and memory.</p></div></div></div></section><section id="about" class="section"><div class="head"><span class="mono red eyebrow">01</span><h2>About — Section</h2></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>About block 1</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>About block 2</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>About block 3</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div></section><section id="education" class="section"><div class="head"><span class="mono red eyebrow">02</span><h2>Education — Section</h2></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>Education block 1</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>Education block 2</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>Education block 3</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div></section><section id="skills" class="section"><div class="head"><span class="mono red eyebrow">03</span><h2>Skills — Section</h2></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>Skills block 1</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>Skills block 2</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>Skills block 3</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div></section><section id="stack" class="section"><div class="head"><span class="mono red eyebrow">04</span><h2>Stack — Section</h2></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>Stack block 1</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>Stack block 2</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>Stack block 3</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div></section><section id="projects" class="section"><div class="head"><span class="mono red eyebrow">05</span><h2>Projects — Section</h2></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>Projects block 1</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>Projects block 2</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>Projects block 3</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div></section><section id="research" class="section"><div class="head"><span class="mono red eyebrow">06</span><h2>Research — Section</h2></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>Research block 1</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>Research block 2</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>Research block 3</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div></section><section id="build" class="section"><div class="head"><span class="mono red eyebrow">07</span><h2>Build — Section</h2></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>Build block 1</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>Build block 2</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>Build block 3</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div></section><section id="learning" class="section"><div class="head"><span class="mono red eyebrow">08</span><h2>Learning — Section</h2></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>Learning block 1</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>Learning block 2</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>Learning block 3</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div></section><section id="contact" class="section"><div class="head"><span class="mono red eyebrow">09</span><h2>Contact — Section</h2></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>Contact block 1</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>Contact block 2</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div><div class="reveal card" style="padding:22px;border:1px solid #333;margin:10px 0"><b>Contact block 3</b><p class="muted">Production-grade autonomous systems running 24/7 across local silicon, blockchain mainnets and commercial endpoints, with persistent memory and continuous self-evolution.</p></div></section></main><script>/**
+ * Multi-agent build, one pipeline per block, many cursors working in parallel.
+ *   layout  : a cursor drops a grey wireframe block and drags its corner handle to size + position it
+ *   write   : a different cursor starts typing the block's real text, character by character
+ *   style   : another cursor paints the look over it (grayscale -> real colours)
+ *   adjust  : another cursor nudges the finished block and drags it into its exact final position
+ * Idle cursors immediately take the next available job on any block of the current screen.
+ * The page scrolls to the next screen only after every block of the current screen is complete.
+ * The build always runs to the end; if the visitor scrolls, finished blocks stay and unbuilt ones stay hidden.
+ */
+const COLORS = ['#3aa0ff', '#38e8a8', '#ffd23a', '#ff2a2a', '#b583ff', '#ff8a3a', '#2ee6e6', '#ff5fb7', '#9be84a', '#7aa2ff', '#ffb86b', '#e6e6ff'];
+const SEL = '.head, .reveal, .hero-copy, .hero-side, .hero-word, .photo-frame, .stack-card, .learn, .tabs, .panel, .lab-list, .lab-view, .form, .contact-info, .filters, .card, .stats, .timeline';
+const STAGES = 4;
+const ARROW = (c) => `<svg viewBox="0 0 16 16" width="18" height="18"><path d="M1 1l5 14 2.2-5.8L14 7z" fill="${c}" stroke="#000" stroke-opacity=".55"/></svg>`;
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const rnd = (a, b) => a + Math.random() * (b - a);
+const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const frames = (ms, fn) => new Promise((res) => {
+    const t0 = performance.now();
+    const step = (now) => { const k = Math.min(1, (now - t0) / ms); fn(k); k < 1 ? requestAnimationFrame(step) : res(); };
+    requestAnimationFrame(step);
+});
+function chipFor(t) {
+    const c = t.classList;
+    if (c.contains('head'))
+        return 'Heading';
+    if (c.contains('hero-word'))
+        return 'Display text';
+    if (c.contains('photo-frame'))
+        return 'Image';
+    if (c.contains('form'))
+        return 'Form';
+    if (c.contains('tabs') || c.contains('filters'))
+        return 'Tabs';
+    if (c.contains('stats'))
+        return 'Stats';
+    if (c.contains('timeline'))
+        return 'Timeline';
+    if (c.contains('contact-info'))
+        return 'Links';
+    if (/^(P|BLOCKQUOTE|H[1-6])$/.test(t.tagName))
+        return 'Text';
+    if (c.contains('btn'))
+        return 'Button';
+    return t.querySelector('h2,h3,h4') ? 'Card' : 'Text';
+}
+function runAgentBuild(startDelay = 2300, replay = false) {
+    if (typeof window === 'undefined' || window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+        return () => { };
+    const root = document.documentElement;
+    const docTop = (e) => e.getBoundingClientRect().top + scrollY;
+    // ── collect blocks (outermost, split big containers into their children so more cursors can work at once) ──
+    const sections = Array.from(document.querySelectorAll('main > section'));
+    const blocks = [];
+    sections.forEach((s) => {
+        const all = Array.from(s.querySelectorAll(SEL));
+        const outer = all.filter((e) => !all.some((o) => o !== e && o.contains(e))).slice(0, 18);
+        outer.forEach((e) => {
+            const kids = Array.from(e.children).filter((c) => c instanceof HTMLElement && c.offsetHeight > 8 && !/^(SCRIPT|STYLE)$/.test(c.tagName));
+            if (kids.length >= 3 && e.offsetHeight > 220 && !e.matches('.photo-frame, .form, .tabs, .hero-word')) {
+                if (e.classList.contains('reveal'))
+                    e.classList.add('in');
+                blocks.push(...kids);
+            }
+            else
+                blocks.push(e);
+        });
+    });
+    blocks.sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+    if (!blocks.length)
+        return () => { };
+    const tasks = blocks.map((t, idx) => ({ t, idx, state: 'new', last: -1, placed: null }));
+    const N = tasks.length;
+    let dead = false, userScrolled = false, steps = 0, wS = 0, wE = 0, finished = false;
+    tasks.forEach(({ t }) => { t.classList.remove('ab-done', 'ab-write', 'ab-color'); t.classList.add('ab-pre'); });
+    // ── dock ──
+    const dock = document.createElement('div');
+    dock.className = 'ab-dock';
+    dock.innerHTML = `<span class="dots">${COLORS.map((c) => `<i style="background:${c}"></i>`).join('')}</span><span class="n">12 agents</span><span class="steps">0 / ${N * STAGES} steps</span><span class="bar"><u></u></span><span class="stat">Scanning page…</span><button type="button" class="rep" disabled>Replay</button>`;
+    const q = (s) => dock.querySelector(s);
+    const layer = document.createElement('div');
+    layer.className = 'ab-layer';
+    layer.setAttribute('aria-hidden', 'true');
+    let scan = null;
+    if (replay) {
+        scan = document.createElement('div');
+        scan.className = 'pre';
+        scan.setAttribute('aria-hidden', 'true');
+        scan.style.zIndex = '590';
+        scan.innerHTML = '<div class="pre-tile">AR</div>' + COLORS.map((c, i) => `<span class="pre-c" style="--a:${i * 30}deg;--d:${i * 35}ms">${ARROW(c)}</span>`).join('');
+        document.body.appendChild(scan);
+    }
+    const agents = COLORS.map((c, id) => {
+        const el = document.createElement('div');
+        el.className = 'ab-agent';
+        el.innerHTML = ARROW(c);
+        layer.appendChild(el);
+        return { el, c, id, x: innerWidth / 2, y: innerHeight / 2 };
+    });
+    document.body.append(layer, dock);
+    requestAnimationFrame(() => dock.classList.add('on'));
+    const place = (a, x, y, ms) => {
+        a.x = x;
+        a.y = y;
+        a.el.style.transitionDuration = `${ms}ms`;
+        a.el.style.transform = `translate3d(${clamp(x, 2, innerWidth - 22)}px,${clamp(y, 2, innerHeight - 26)}px,0)`;
+    };
+    agents.forEach((a) => place(a, innerWidth / 2, innerHeight / 2, 0));
+    layer.style.opacity = '0';
+    const stepDone = () => {
+        steps++;
+        q('.steps').textContent = `${steps} / ${N * STAGES} steps`;
+        q('.bar u').style.width = `${Math.round((steps / (N * STAGES)) * 100)}%`;
+    };
+    const onUser = () => { userScrolled = true; };
+    const onKey = (e) => { if (['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End', ' '].includes(e.key))
+        userScrolled = true; };
+    // boxes that follow a block while the page scrolls
+    const live = new Set();
+    function tick() {
+        if (dead)
+            return;
+        live.forEach(({ b, t }) => {
+            const r = t.getBoundingClientRect();
+            b.style.transform = `translate3d(${r.left}px,${r.top}px,0)`;
+            b.style.width = `${r.width}px`;
+            b.style.height = `${r.height}px`;
+        });
+        requestAnimationFrame(tick);
+    }
+    function makeBox(t, cls = '') {
+        const b = document.createElement('div');
+        b.className = `ab-box ${cls}`;
+        b.innerHTML = `<i></i><i></i><i></i><i></i><u>${chipFor(t)}</u><em></em>`;
+        layer.appendChild(b);
+        return { b, tag: b.querySelector('em') };
+    }
+    const dropBox = (b) => { b.classList.add('out'); setTimeout(() => b.remove(), 350); };
+    const corner = (r) => [r.left + r.width, r.top + r.height];
+    // ── stages ──
+    async function layoutStage(a, k) {
+        const t = k.t, { b, tag } = makeBox(t);
+        const r0 = t.getBoundingClientRect();
+        const w0 = clamp(r0.width * rnd(0.12, 0.3), 36, 200), h0 = clamp(r0.height * rnd(0.12, 0.3), 22, 110);
+        const dx = rnd(-90, 90) + (r0.width - w0) * rnd(0, 0.55), dy = rnd(-60, 60) + (r0.height - h0) * rnd(0, 0.45);
+        const frame = (e) => {
+            const r = t.getBoundingClientRect();
+            const w = w0 + (r.width - w0) * e, h = h0 + (r.height - h0) * e;
+            const l = r.left + dx * (1 - e), tp = r.top + dy * (1 - e);
+            b.style.transform = `translate3d(${l}px,${tp}px,0)`;
+            b.style.width = `${w}px`;
+            b.style.height = `${h}px`;
+            tag.textContent = `${Math.round(w)} × ${Math.round(h)}`;
+            return corner({ left: l, top: tp, width: w, height: h });
+        };
+        const [sx, sy] = frame(0);
+        place(a, sx, sy, 380);
+        await wait(360);
+        if (dead)
+            return;
+        b.classList.add('on');
+        frame(0);
+        await wait(rnd(120, 280));
+        if (dead)
+            return;
+        const dur = clamp(500 + r0.width * 0.35 + r0.height * 0.2, 650, 1250);
+        await frames(dur, (kk) => { const [cx, cy] = frame(ease(kk)); place(a, cx, cy, 0); });
+        if (dead)
+            return;
+        b.classList.add('placed');
+        k.placed = b; // stays on screen as a grey placeholder
+        live.add({ b, t, tag });
+    }
+    function textNodes(t) {
+        const out = [];
+        const w = document.createTreeWalker(t, NodeFilter.SHOW_TEXT);
+        let n;
+        while ((n = w.nextNode())) {
+            const p = n.parentElement;
+            if ((n.nodeValue || '').trim() && p && !p.closest('script,style,svg,canvas,textarea'))
+                out.push(n);
+        }
+        return out;
+    }
+    async function writeStage(a, k) {
+        const t = k.t;
+        const nodes = textNodes(t), texts = nodes.map((n) => n.nodeValue || ''), total = texts.reduce((s, x) => s + x.length, 0);
+        const h = t.getBoundingClientRect().height;
+        t.style.minHeight = `${h}px`; // layout stays put while text is typed in
+        nodes.forEach((n) => { n.nodeValue = ''; });
+        const placed = k.placed;
+        if (placed) {
+            for (const l of Array.from(live))
+                if (l.b === placed)
+                    live.delete(l);
+            dropBox(placed);
+            k.placed = null;
+        }
+        t.classList.remove('ab-pre');
+        t.classList.add('ab-write');
+        const { b } = makeBox(t, 'sel on');
+        const lv = { b, t };
+        live.add(lv);
+        const caret = document.createElement('div');
+        caret.className = 'ab-caret';
+        caret.style.background = a.c;
+        layer.appendChild(caret);
+        const r0 = t.getBoundingClientRect();
+        place(a, r0.left + 6, r0.top + 8, 340);
+        await wait(360);
+        const caretPos = (i, off) => {
+            const rg = document.createRange();
+            rg.setStart(nodes[i], off);
+            rg.setEnd(nodes[i], off);
+            let r = rg.getClientRects()[0];
+            if (!r || (!r.width && !r.height))
+                r = undefined;
+            if (r)
+                return { x: r.left, y: r.top, h: r.height };
+            const e = t.getBoundingClientRect();
+            return { x: e.left + 4, y: e.top + 2, h: 16 };
+        };
+        if (total) {
+            const dur = clamp(total * 8, 500, 1900);
+            await frames(dur, (kk) => {
+                if (dead)
+                    return;
+                let want = Math.floor(total * kk), ni = 0;
+                nodes.forEach((n, i) => { const take = clamp(want, 0, texts[i].length); n.nodeValue = texts[i].slice(0, take); want -= take; if (take > 0 || i === 0)
+                    ni = i; });
+                const used = nodes[ni].nodeValue.length, c = caretPos(ni, used);
+                caret.style.transform = `translate3d(${c.x}px,${c.y}px,0)`;
+                caret.style.height = `${c.h}px`;
+                place(a, c.x + 4, c.y + c.h, 0);
+            });
+        }
+        else
+            await wait(450);
+        nodes.forEach((n, i) => { n.nodeValue = texts[i]; });
+        t.style.minHeight = '';
+        caret.remove();
+        live.delete(lv);
+        dropBox(b);
+        await wait(60);
+    }
+    async function styleStage(a, k) {
+        const t = k.t, { b } = makeBox(t, 'sel on');
+        const lv = { b, t };
+        live.add(lv);
+        const r = t.getBoundingClientRect();
+        place(a, r.left + 8, r.top + 8, 320);
+        await wait(340);
+        if (dead)
+            return;
+        t.classList.remove('ab-write');
+        t.classList.add('ab-color'); // colour floods in while the cursor sweeps across
+        await frames(650, (kk) => { const e = t.getBoundingClientRect(); place(a, e.left + e.width * ease(kk), e.top + Math.min(e.height, 40) * (0.3 + 0.7 * Math.sin(kk * 9) ** 2), 0); });
+        if (t.classList.contains('reveal'))
+            t.classList.add('in');
+        t.classList.remove('ab-color');
+        live.delete(lv);
+        dropBox(b);
+    }
+    async function adjustStage(a, k) {
+        const t = k.t, { b, tag } = makeBox(t, 'on');
+        const lv = { b, t, tag };
+        live.add(lv);
+        const ox = rnd(10, 22) * (Math.random() < 0.5 ? -1 : 1), oy = rnd(6, 14) * (Math.random() < 0.5 ? -1 : 1);
+        t.style.transition = 'none';
+        t.style.transform = `translate(${ox}px,${oy}px)`;
+        let r = t.getBoundingClientRect();
+        const [cx, cy] = corner(r);
+        place(a, cx, cy, 340);
+        await wait(380);
+        if (dead)
+            return;
+        await frames(650, (kk) => {
+            const e = 1 - ease(kk);
+            t.style.transform = `translate(${ox * e}px,${oy * e}px)`;
+            r = t.getBoundingClientRect();
+            const [x, y] = corner(r);
+            place(a, x, y, 0);
+            tag.textContent = `x ${(ox * e).toFixed(0)}  y ${(oy * e).toFixed(0)}`;
+        });
+        t.style.transform = '';
+        t.style.transition = '';
+        live.delete(lv);
+        dropBox(b);
+    }
+    // ── job board ──
+    const order = [['styled', 'adjusting', 'adjusting'], ['written', 'styling', 'styling'], ['sized', 'writing', 'writing'], ['new', 'sizing', 'sizing']];
+    function claim(a) {
+        for (const own of [false, true]) {
+            for (let s = 0; s < order.length; s++) {
+                for (let i = wS; i < wE; i++) {
+                    const k = tasks[i];
+                    if (k.state === order[s][0] && (own || k.last !== a.id)) {
+                        k.state = order[s][1];
+                        k.last = a.id;
+                        return { k, stage: 3 - s };
+                    }
+                }
+            }
+        }
+        return null;
+    }
+    async function worker(a) {
+        while (!dead && !finished) {
+            const job = claim(a);
+            if (!job) {
+                // nothing free right now: drift over to a block that is being worked on
+                const busy = tasks.slice(wS, wE).filter((k) => k.state !== 'done');
+                if (busy.length) {
+                    const r = busy[Math.floor(Math.random() * busy.length)].t.getBoundingClientRect();
+                    place(a, r.left + rnd(0.1, 0.9) * r.width, r.top + rnd(0.1, 0.9) * Math.min(r.height, 200), 800);
+                }
+                await wait(450);
+                continue;
+            }
+            const { k, stage } = job;
+            if (stage === 0)
+                await layoutStage(a, k);
+            else if (stage === 1)
+                await writeStage(a, k);
+            else if (stage === 2)
+                await styleStage(a, k);
+            else
+                await adjustStage(a, k);
+            if (dead)
+                return;
+            stepDone();
+            k.state = ['sized', 'written', 'styled', 'done'][stage];
+            await wait(rnd(30, 120));
+        }
+    }
+    const scrollTo = (y, ms) => {
+        const from = scrollY, to = clamp(y, 0, document.documentElement.scrollHeight - innerHeight);
+        return frames(ms, (kk) => { if (!dead && !userScrolled)
+            window.scrollTo(0, from + (to - from) * ease(kk)); });
+    };
+    const t00 = performance.now();
+    async function main() {
+        await wait(startDelay);
+        if (dead)
+            return;
+        if (scan) {
+            scan.classList.add('out');
+            const s = scan;
+            setTimeout(() => s.remove(), 700);
+        }
+        layer.style.opacity = '1';
+        window.addEventListener('wheel', onUser, { passive: true });
+        window.addEventListener('touchstart', onUser, { passive: true });
+        window.addEventListener('keydown', onKey);
+        window.addEventListener('mousedown', onUser);
+        root.style.scrollBehavior = 'auto';
+        window.scrollTo(0, 0);
+        q('.stat').textContent = 'Building…';
+        requestAnimationFrame(tick);
+        const pool = Promise.all(agents.map((a, i) => wait(i * 120).then(() => worker(a))));
+        // one screen at a time: build every block on it completely, then scroll on
+        while (wS < N && !dead) {
+            const top = Math.max(0, docTop(tasks[wS].t) - 110);
+            await scrollTo(top, 700);
+            if (dead)
+                return;
+            const base = docTop(tasks[wS].t);
+            let e = wS + 1;
+            while (e < N && e - wS < 12 && docTop(tasks[e].t) + Math.min(tasks[e].t.offsetHeight, innerHeight * 0.5) <= base + innerHeight - 110)
+                e++;
+            wE = e;
+            await new Promise((res) => { const iv = setInterval(() => { if (dead || tasks.slice(wS, wE).every((k) => k.state === 'done')) {
+                clearInterval(iv);
+                res();
+            } }, 120); });
+            wS = wE;
+            wE = wS;
+        }
+        finished = true;
+        await pool;
+        if (dead)
+            return;
+        q('.stat').textContent = 'Finishing…';
+        const mx = innerWidth / 2 - 8, my = innerHeight / 2 - 10;
+        agents.forEach((a, k) => place(a, mx + Math.cos(k * 0.52) * 22, my + Math.sin(k * 0.52) * 22, 1000 + k * 40));
+        await wait(1500);
+        if (dead)
+            return;
+        agents.forEach((a, k) => place(a, innerWidth * 0.82 + Math.cos(k * 0.5) * 36, 90 + k * 14, 1500 + k * 50));
+        await wait(900);
+        if (dead)
+            return;
+        layer.classList.add('out');
+        q('.stat').textContent = `Complete · ${((performance.now() - t00 - startDelay) / 1000).toFixed(1)}s`;
+        dock.classList.add('ok');
+        const rep = q('.rep');
+        rep.disabled = false;
+        rep.onclick = () => { cleanup(true); window.scrollTo(0, 0); runAgentBuild(1900, true); };
+        if (!userScrolled) {
+            const from = scrollY;
+            await frames(900, (kk) => window.scrollTo(0, from * (1 - ease(kk))));
+        }
+        dead = true;
+        window.removeEventListener('wheel', onUser);
+        window.removeEventListener('touchstart', onUser);
+        window.removeEventListener('keydown', onKey);
+        window.removeEventListener('mousedown', onUser);
+        root.style.removeProperty('scroll-behavior');
+        setTimeout(() => layer.remove(), 700);
+    }
+    function cleanup(full = false) {
+        dead = true;
+        window.removeEventListener('wheel', onUser);
+        window.removeEventListener('touchstart', onUser);
+        window.removeEventListener('keydown', onKey);
+        window.removeEventListener('mousedown', onUser);
+        tasks.forEach(({ t }) => { t.classList.remove('ab-pre', 'ab-write', 'ab-color'); t.style.minHeight = ''; t.style.transform = ''; t.style.transition = ''; if (t.classList.contains('reveal'))
+            t.classList.add('in'); });
+        root.style.removeProperty('scroll-behavior');
+        layer.remove();
+        scan?.remove();
+        if (full)
+            dock.remove();
+        else
+            dock.classList.remove('on');
+    }
+    main();
+    return () => cleanup(true);
+}
+
+runAgentBuild(1500);</script></body></html>
